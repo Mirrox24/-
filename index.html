@@ -84,16 +84,6 @@
             background-repeat: no-repeat;
         }
     </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4CAF50">
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js')
-  })
-}
-</script>
-
 </head>
 <body class="bg-gray-300 dark:bg-gray-800 flex items-center justify-center">
 
@@ -147,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let appState = {}; 
 
     function loadState() {
-        const savedState = JSON.parse(localStorage.getItem('sberenokState_v17_final'));
+        const savedState = JSON.parse(localStorage.getItem('sberenokState_v15_final'));
         const defaultState = {
             ui: { currentView: 'home', theme: 'light', isAiTyping: false, accentColor: '#4CAF50', isChatInitiated: false, isFirstLaunch: true, },
             user: { 
@@ -163,12 +153,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     { id: 2, task: "Тренировка по плаванию", done: true, xpEarned: true }, 
                     { id: 3, task: "Позвонить бабушке", done: false, xpEarned: false }, 
                 ], 
-                spendingHistory: [], 
-                stats: { completedTasks: 1, totalSavings: 2800, lessonsCompleted: 0, goalsAchieved: 0, spendingCount: 0 }, 
+                spendingHistory: [
+                    { id: 1, date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], amount: 150, category: 'Еда', desc: 'Обед в школе' },
+                    { id: 2, date: new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0], amount: 300, category: 'Игры', desc: 'Новая игра' },
+                    { id: 3, date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], amount: 80, category: 'Транспорт', desc: 'Автобус' },
+                    { id: 4, date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], amount: 250, category: 'Развлечения', desc: 'Кино' },
+                    { id: 5, date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0], amount: 120, category: 'Еда', desc: 'Мороженое' },
+                ], 
+                stats: { completedTasks: 1, totalSavings: 2800, lessonsCompleted: 0, goalsAchieved: 0, spendingCount: 5 }, 
                 unlockedSkins: ['default'], 
                 completedLessons: [], 
                 achievements: [], 
-                proactiveTipsShown: { spendingAnalysis: false, goalMotivation: false, academyWelcome: false } 
+                proactiveTipsShown: { spendingAnalysis: false, goalMotivation: false } 
             },
             chat: { history: [] },
         };
@@ -179,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     }
     
-    function saveState() { localStorage.setItem('sberenokState_v17_final', JSON.stringify(appState)); }
+    function saveState() { localStorage.setItem('sberenokState_v15_final', JSON.stringify(appState)); }
     function render() { renderNav(); renderView(); }
     function navigate(viewId) { appState.ui.currentView = viewId; render(); }
     
@@ -199,20 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewId = appState.ui.currentView;
         let content = '';
         const contextualHelpButton = (prompt, persona) => `<button data-action="show-ai-help" data-prompt="${prompt}" data-persona="${persona}" title="Спросить Сберёнка" class="absolute top-2 right-1 w-12 h-12 bg-[var(--accent)] text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-40"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 7.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/><path d="M5 21v-2a4.4 4.4 0 0 1 4.4-4.4h5.2A4.4 4.4 0 0 1 19 19v2"/></svg></button>`;
-        
-        if (viewId === 'academy' && !appState.user.proactiveTipsShown.academyWelcome) {
-            setTimeout(() => {
-                showProactiveToast(
-                    'Добро пожаловать в Академию! Здесь ты можешь узнать много нового о деньгах. Готов начать?',
-                    'Начать учиться!',
-                    'Какой урок мне стоит пройти сейчас, чтобы лучше управлять деньгами?',
-                    'academy-tutor'
-                );
-                appState.user.proactiveTipsShown.academyWelcome = true;
-                saveState();
-            }, 500);
-        }
-
         switch(viewId) {
             case 'home': content = getHomeHTML(); break;
             case 'piggy-bank': content = getPiggyBankHTML() + contextualHelpButton('Дай мне 3 развернутых совета, как быстрее накопить на мою текущую цель.', 'financial-analyst'); break;
@@ -381,11 +363,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function triggerProactiveAI() {
-        if (appState.user.spendingHistory.length >= 1 && !appState.user.proactiveTipsShown.spendingAnalysis) {
+        if (appState.user.spendingHistory.length >= 5 && !appState.user.proactiveTipsShown.spendingAnalysis) {
             showProactiveToast(
-                'Отлично, расход записан! Хочешь, я проанализирую твои траты и помогу найти, где можно сэкономить?',
-                'Да, проанализируй!',
-                'Проанализируй мои расходы и скажи, где я могу сэкономить.',
+                'Я заметил, ты активно ведешь учет расходов! Хочешь, я проанализирую их и помогу найти, где можно сэкономить?',
+                'Да, давай!',
+                'Проанализируй мои последние 5 трат и скажи, где я могу сэкономить.',
                 'financial-analyst'
             );
             appState.user.proactiveTipsShown.spendingAnalysis = true;
@@ -429,10 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.toast.appendChild(toast);
         setTimeout(() => toast.classList.add('opacity-100', 'translate-y-0'), 10);
         setTimeout(() => {
-            if (toast) {
-                toast.classList.remove('opacity-100', 'translate-y-0');
-                setTimeout(() => toast.remove(), 300);
-            }
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            setTimeout(() => toast.remove(), 300);
         }, 10000);
     }
 
@@ -549,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentEl = document.getElementById('lesson-content');
         const footerEl = document.getElementById('lesson-footer');
         if (contentEl) contentEl.innerHTML = `<p class="whitespace-pre-wrap">${lessonContent}</p>`;
-        if (footerEl) footerEl.innerHTML = `<div class="flex justify-end"><button data-action="${isCompleted ? 'cancel' : 'ask-if-understood'}" data-lesson-id="${lessonId}" class="py-2 px-6 rounded-lg bg-[var(--accent)] text-white font-semibold shadow-md active:scale-95">${isCompleted ? 'Отлично!' : 'Я понял!'}</button></div>`;
+        if (footerEl) footerEl.innerHTML = `<div class="flex justify-end"><button data-action="${isCompleted ? 'cancel' : 'complete-lesson'}" data-lesson-id="${lessonId}" class="py-2 px-6 rounded-lg bg-[var(--accent)] text-white font-semibold shadow-md active:scale-95">${isCompleted ? 'Отлично!' : 'Я понял!'}</button></div>`;
     }
     
     document.addEventListener('click', async e => {
@@ -603,42 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast("Расход записан!", 'success'); triggerProactiveAI(); } else { showToast("Недостаточно средств или неверные данные.", 'error'); } break;
             }
             case 'start-lesson': await showLessonView(lessonId); break;
-            case 'ask-if-understood': { 
-                const lesson = academyLessons[lessonId];
-                if (lessonId && !appState.user.completedLessons.includes(lessonId)) { 
-                    appState.user.completedLessons.push(lessonId); 
-                    appState.user.stats.lessonsCompleted++; 
-                    addXp(lesson.xp); 
-                    checkAchievements(); 
-                    saveState(); 
-                    showToast(`Урок пройден! +${lesson.xp} XP`, 'success'); 
-                    render(); 
-                }
-                showModal(`
-                    <div class="text-center flex flex-col items-center">
-                        <img src="${characterStyles[appState.user.characterStyle].img}" class="w-20 h-20 rounded-full mb-4">
-                        <h3 class="text-xl font-bold mb-4">Отлично!</h3>
-                        <p class="text-[var(--text-secondary)] mb-6">Все ли было понятно в этом уроке?</p>
-                        <div class="flex justify-between w-full gap-3">
-                            <button data-action="repeat-lesson" data-lesson-id="${lessonId}" class="flex-1 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 font-semibold">Нет, повторить</button>
-                            <button data-action="lesson-understood" class="flex-1 py-2 rounded-lg bg-[var(--accent)] text-white font-semibold">Да, всё ясно!</button>
-                        </div>
-                    </div>
-                `);
-                break;
-            }
-            case 'lesson-understood': {
-                showModal(`
-                    <div class="text-center flex flex-col items-center">
-                        <img src="${characterStyles[appState.user.characterStyle].img}" class="w-20 h-20 rounded-full mb-4">
-                        <h3 class="text-xl font-bold mb-4">Замечательно!</h3>
-                        <p class="text-[var(--text-secondary)] mb-6">Спасибо за усердную работу! Продолжай в том же духе. 🚀</p>
-                        <button data-action="cancel" class="w-full mt-4 py-2 rounded-lg bg-[var(--accent)] text-white font-semibold">Закрыть</button>
-                    </div>
-                `);
-                break;
-            }
-            case 'repeat-lesson': await showLessonView(lessonId); break;
+            case 'complete-lesson': if (lessonId && !appState.user.completedLessons.includes(lessonId)) { appState.user.completedLessons.push(lessonId); appState.user.stats.lessonsCompleted++; addXp(academyLessons[lessonId].xp); checkAchievements(); saveState(); showToast(`Урок пройден!`, 'success'); } hideModal(); render(); break;
             case 'ai-action': case 'send-chat-message': { const chatInput = document.getElementById('chat-input'); let message = prompt || chatInput?.value.trim(); if (!message) return;
                 if (chatInput) chatInput.value = ''; if (appState.ui.currentView !== 'ai-assistant') { navigate('ai-assistant'); await new Promise(resolve => setTimeout(resolve, 50));
                 } appState.chat.history.push({ role: 'user', text: message }); renderChatMessages(); const botResponse = await callGigaChatAPI(message, persona || 'assistant');
